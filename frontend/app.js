@@ -52,7 +52,7 @@ searchButton.addEventListener("click", async () => {
         if (!response.ok) throw new Error(data.error || "Search failed. Please try again.");
 
         results.replaceChildren();
-        if (data.analysis) renderAnalysis(data.analysis);
+        if (data.analysis) renderAnalysis(data.analysis, data.results || []);
         renderSources(Array.isArray(data.results) ? data.results : []);
     } catch (error) {
         results.replaceChildren();
@@ -82,7 +82,7 @@ function showNotice(message, className = "notice", title = "") {
     results.appendChild(notice);
 }
 
-function renderAnalysis(analysis) {
+function renderAnalysis(analysis, sources) {
     const section = document.createElement("section");
     section.className = "analysis-card";
     section.setAttribute("aria-labelledby", "analysis-title");
@@ -96,12 +96,162 @@ function renderAnalysis(analysis) {
     label.className = "guidance-label";
     label.textContent = "Informational guidance";
     titleRow.append(heading, label);
+    section.appendChild(titleRow);
 
-    const text = document.createElement("div");
-    text.className = "analysis-text";
-    renderMarkdown(text, analysis);
-    section.append(titleRow, text);
+    if (typeof analysis === "string") {
+        const overview = document.createElement("p");
+        overview.className = "guidance-summary";
+        overview.textContent = cleanFallbackText(analysis);
+        section.appendChild(overview);
+        results.appendChild(section);
+        return;
+    }
+
+    const overview = document.createElement("p");
+    overview.className = "guidance-summary";
+    overview.textContent = analysis.overview || "Here is the information I found in the official sources.";
+    section.appendChild(overview);
+
+    const grid = document.createElement("div");
+    grid.className = "guidance-grid";
+
+    if (Array.isArray(analysis.supportOptions) && analysis.supportOptions.length) {
+        const block = createGuidanceBlock("Possible support options", "support-options-block");
+        for (const option of analysis.supportOptions) {
+            const card = document.createElement("article");
+            card.className = "support-option";
+            const title = document.createElement("h4");
+            title.textContent = option.name;
+            card.appendChild(title);
+            appendLabeledParagraph(card, "Why it may fit", option.whyItMayFit);
+            appendLabeledParagraph(card, "Who may qualify", option.whoMayQualify);
+            appendLabeledParagraph(card, "Where to apply", option.whereToApply);
+            appendCitationLinks(card, option.sourceIds, sources);
+            block.appendChild(card);
+        }
+        grid.appendChild(block);
+    }
+
+    if (Array.isArray(analysis.eligibilityFactors) && analysis.eligibilityFactors.length) {
+        const block = createGuidanceBlock("What can affect eligibility", "");
+        const list = document.createElement("ul");
+        list.className = "guidance-list";
+        for (const factor of analysis.eligibilityFactors) {
+            const item = document.createElement("li");
+            const title = document.createElement("strong");
+            title.textContent = factor.factor;
+            item.append(title, document.createTextNode(` — ${factor.whyItMatters || "Check this requirement with the relevant authority."}`));
+            appendCitationLinks(item, factor.sourceIds, sources);
+            list.appendChild(item);
+        }
+        block.appendChild(list);
+        grid.appendChild(block);
+    }
+
+    if (Array.isArray(analysis.missingInformation) && analysis.missingInformation.length) {
+        const block = createGuidanceBlock("What we still need to know", "");
+        const list = document.createElement("ul");
+        list.className = "guidance-list";
+        for (const question of analysis.missingInformation) {
+            const item = document.createElement("li");
+            item.textContent = question;
+            list.appendChild(item);
+        }
+        block.appendChild(list);
+        grid.appendChild(block);
+    }
+
+    if (Array.isArray(analysis.nextSteps) && analysis.nextSteps.length) {
+        const block = createGuidanceBlock("Suggested next steps", "next-steps-block");
+        const list = document.createElement("ol");
+        list.className = "next-step-list";
+        for (const [index, step] of analysis.nextSteps.entries()) {
+            const item = document.createElement("li");
+            item.className = "next-step-item";
+            const number = document.createElement("span");
+            number.className = "next-step-number";
+            number.textContent = String(index + 1).padStart(2, "0");
+            const copy = document.createElement("div");
+            const title = document.createElement("strong");
+            title.textContent = step.action;
+            copy.appendChild(title);
+            if (step.reason) {
+                const reason = document.createElement("p");
+                reason.textContent = step.reason;
+                copy.appendChild(reason);
+            }
+            appendCitationLinks(copy, step.sourceIds, sources);
+            item.append(number, copy);
+            list.appendChild(item);
+        }
+        block.appendChild(list);
+        grid.appendChild(block);
+    }
+
+    if (grid.children.length) section.appendChild(grid);
+    const disclaimer = document.createElement("p");
+    disclaimer.className = "answer-disclaimer";
+    disclaimer.textContent = "This is general guidance, not an official eligibility decision. Check the linked sources or contact the relevant authority.";
+    section.appendChild(disclaimer);
     results.appendChild(section);
+}
+
+function createGuidanceBlock(titleText, className) {
+    const block = document.createElement("section");
+    block.className = `guidance-block ${className}`.trim();
+    const heading = document.createElement("h3");
+    heading.textContent = titleText;
+    block.appendChild(heading);
+    return block;
+}
+
+function appendLabeledParagraph(parent, labelText, value) {
+    if (!value) return;
+    const paragraph = document.createElement("p");
+    paragraph.className = "option-detail";
+    const label = document.createElement("strong");
+    label.textContent = `${labelText}: `;
+    paragraph.append(label, document.createTextNode(value));
+    parent.appendChild(paragraph);
+}
+
+function appendCitationLinks(parent, sourceIds, sources) {
+    if (!Array.isArray(sourceIds) || !sourceIds.length) return;
+    const citations = document.createElement("div");
+    citations.className = "citation-links";
+    for (const sourceId of sourceIds) {
+        const source = sources[Number(sourceId) - 1];
+        const url = getOfficialUrl(source?.url);
+        if (!source || !url) continue;
+        const link = document.createElement("a");
+        link.className = "citation-link";
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = `Source ${sourceId} · ${source.title || "Official source"}`;
+        link.title = source.title || `Official source ${sourceId}`;
+        citations.appendChild(link);
+    }
+    if (citations.children.length) parent.appendChild(citations);
+}
+
+function cleanFallbackText(value) {
+    return String(value || "")
+        .replace(/\\([*_`#])/g, "$1")
+        .replace(/^\s{0,3}#{1,6}\s*/gm, "")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/^\s*[-*•]\s+/gm, "")
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1")
+        .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+        .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
 }
 
 function renderSources(sources) {
@@ -173,78 +323,4 @@ function getOfficialUrl(value) {
     } catch {
         return "";
     }
-}
-
-function renderMarkdown(container, markdown) {
-    const inlinePattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))/g;
-    const appendInline = (parent, text) => {
-        let lastIndex = 0;
-        for (const match of text.matchAll(inlinePattern)) {
-            parent.append(document.createTextNode(text.slice(lastIndex, match.index)));
-            let node;
-            if (match[2] !== undefined) {
-                node = document.createElement("strong");
-                node.textContent = match[2];
-            } else if (match[3] !== undefined) {
-                node = document.createElement("em");
-                node.textContent = match[3];
-            } else if (match[4] !== undefined) {
-                node = document.createElement("code");
-                node.textContent = match[4];
-            } else {
-                node = document.createElement("a");
-                node.textContent = match[5];
-                node.href = match[6];
-                node.target = "_blank";
-                node.rel = "noopener noreferrer";
-            }
-            parent.append(node);
-            lastIndex = match.index + match[0].length;
-        }
-        parent.append(document.createTextNode(text.slice(lastIndex)));
-    };
-
-    let paragraph = null;
-    let list = null;
-    const flushParagraph = () => {
-        if (paragraph) container.append(paragraph);
-        paragraph = null;
-    };
-    const flushList = () => {
-        if (list) container.append(list);
-        list = null;
-    };
-
-    for (const rawLine of String(markdown || "").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line) {
-            flushParagraph();
-            flushList();
-            continue;
-        }
-        const headingMatch = line.match(/^(#{1,3})\s+(.+)$/);
-        if (headingMatch) {
-            flushParagraph();
-            flushList();
-            const heading = document.createElement(`h${Number(headingMatch[1].length) + 2}`);
-            appendInline(heading, headingMatch[2]);
-            container.append(heading);
-            continue;
-        }
-        const itemMatch = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
-        if (itemMatch) {
-            flushParagraph();
-            if (!list) list = document.createElement("ul");
-            const item = document.createElement("li");
-            appendInline(item, itemMatch[1]);
-            list.append(item);
-            continue;
-        }
-        flushList();
-        if (!paragraph) paragraph = document.createElement("p");
-        else paragraph.append(document.createTextNode(" "));
-        appendInline(paragraph, line);
-    }
-    flushParagraph();
-    flushList();
 }
