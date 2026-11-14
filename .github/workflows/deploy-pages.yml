@@ -1,0 +1,50 @@
+name: Deploy BenefitPath to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Configure backend URL
+        env:
+          BENEFITPATH_API_BASE: ${{ vars.BENEFITPATH_API_BASE }}
+        run: |
+          if [ -z "$BENEFITPATH_API_BASE" ]; then
+            echo "::error::Add the BENEFITPATH_API_BASE repository variable with the Render service URL before deploying."
+            exit 1
+          fi
+          node -e 'const fs = require("node:fs"); const url = process.env.BENEFITPATH_API_BASE.replace(/\/+$/, ""); if (!url.startsWith("https://")) throw new Error("BENEFITPATH_API_BASE must use HTTPS"); fs.writeFileSync("frontend/config.js", `window.BENEFITPATH_API_BASE = ${JSON.stringify(url)};\n`);'
+
+      - name: Upload frontend
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend
+
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4

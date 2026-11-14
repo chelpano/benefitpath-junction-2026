@@ -197,8 +197,17 @@ async function analyzeWithGemini(situation, sources) {
     return normalizeGuidance(parsed, sources.length);
 }
 
+const allowedOrigins = process.env.ALLOWED_ORIGIN
+    ? process.env.ALLOWED_ORIGIN.split(",").map(origin => origin.trim()).filter(Boolean)
+    : [];
+
 const server = http.createServer((req, res) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const requestOrigin = req.headers.origin;
+    const originIsAllowed = allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin);
+    if (originIsAllowed) {
+        res.setHeader("Access-Control-Allow-Origin", allowedOrigins.length ? requestOrigin : "*");
+        if (allowedOrigins.length) res.setHeader("Vary", "Origin");
+    }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
@@ -208,6 +217,11 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (req.method === "GET" && req.url === "/health") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "ok" }));
+        return;
+    }
     if (req.method === "POST" && req.url === "/analyze") {
         let body = "";
 
@@ -332,6 +346,6 @@ const server = http.createServer((req, res) => {
     res.end("Not found");
 });
 
-server.listen(3000, () => {
-    console.log("BenefitPath server is running on http://localhost:3000");
+server.listen(Number(process.env.PORT) || 3000, "0.0.0.0", () => {
+    console.log(`BenefitPath server is running on port ${Number(process.env.PORT) || 3000}`);
 });
