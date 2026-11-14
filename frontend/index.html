@@ -1,1 +1,93 @@
-<!-- BenefitPath frontend -->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f3">
+    <meta name="description" content="Understand Finnish benefits with clear, practical guidance grounded in official sources.">
+    <title>BenefitPath — Finnish support, made clearer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="#main" aria-label="BenefitPath home">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none"><path d="M16 3.5 27 8v7.2c0 6.3-4.2 10.9-11 13.3C9.2 26.1 5 21.5 5 15.2V8l11-4.5Z" stroke="currentColor" stroke-width="1.8"/><path d="m11.5 15.8 3 3 6.3-6.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="brand-name">BenefitPath</span>
+            </a>
+            <div class="header-note"><span class="status-dot" aria-hidden="true"></span>Information for life in Finland</div>
+        </div>
+    </header>
+
+    <main id="main" class="page-shell">
+        <section class="hero" aria-labelledby="hero-title">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span>FINLAND · BENEFITS GUIDE</p>
+                <h1 id="hero-title">Find your next step<br><span>with confidence.</span></h1>
+                <p class="hero-description">Clear, practical guidance on Finnish benefits, grounded in current information from official sources.</p>
+                <div class="hero-assurance">
+                    <span class="assurance-icon" aria-hidden="true">✓</span>
+                    <span>Plain language <span class="assurance-separator">·</span> Official sources <span class="assurance-separator">·</span> Your choice</span>
+                </div>
+            </div>
+
+            <aside class="promise-card" aria-label="How BenefitPath helps">
+                <div class="promise-topline"><span class="promise-icon" aria-hidden="true">✳</span><span>MADE TO MAKE THINGS CLEARER</span></div>
+                <h2>A little less searching.<br>A little more certainty.</h2>
+                <ul class="promise-list">
+                    <li><span aria-hidden="true">01</span>Find relevant official guidance</li>
+                    <li><span aria-hidden="true">02</span>Understand what it means for you</li>
+                    <li><span aria-hidden="true">03</span>See where to take the next step</li>
+                </ul>
+                <div class="promise-foot"><span class="foot-rule"></span>Built for people navigating a new system</div>
+            </aside>
+        </section>
+
+        <section class="search-panel" aria-labelledby="form-title">
+            <div class="panel-heading">
+                <span class="step-number" aria-hidden="true">01</span>
+                <div>
+                    <p class="section-kicker">START WITH YOUR SITUATION</p>
+                    <h2 id="form-title">What’s going on?</h2>
+                    <p class="form-intro">Share a little context. We’ll look for the official information that matters.</p>
+                </div>
+            </div>
+
+            <label class="sr-only" for="userSituation">Describe your situation</label>
+            <textarea id="userSituation" maxlength="5000" rows="4" placeholder="For example: I recently lost my job in Finland and need to understand what support I can apply for." aria-describedby="privacyHint"></textarea>
+
+            <div class="example-row" aria-label="Example situations">
+                <span class="example-label">Try an example</span>
+                <button class="prompt-chip" type="button" data-query="I recently lost my job in Finland and need to understand what support I can apply for.">I lost my job</button>
+                <button class="prompt-chip" type="button" data-query="I live in Finland with my family and need information about child and housing benefits.">Family support</button>
+                <button class="prompt-chip" type="button" data-query="I am new to Finland and want to find out what housing support may be available.">Housing support</button>
+            </div>
+
+            <div class="form-footer">
+                <p class="privacy-note" id="privacyHint"><span class="lock-icon" aria-hidden="true">▣</span>Keep it general. Don’t include personal identity codes or bank details.</p>
+                <button id="searchButton" class="primary-button" type="button">
+                    <span class="button-label">Find my next step</span>
+                    <svg class="button-arrow" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M4 10h11M10 5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <div id="results" class="results" aria-live="polite" aria-busy="false"></div>
+
+        <section class="how-it-works" aria-label="How BenefitPath works">
+            <div><span class="how-icon" aria-hidden="true">↗</span><span>We search current public guidance</span></div>
+            <div><span class="how-icon" aria-hidden="true">≋</span><span>We explain the relevant details</span></div>
+            <div><span class="how-icon" aria-hidden="true">◎</span><span>You check the source and choose what to do</span></div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner"><span>BenefitPath</span><span>Informational guidance only. Official decisions are made by the relevant authority.</span></div>
+    </footer>
+</body>
+</html>
